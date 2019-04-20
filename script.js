@@ -7,7 +7,8 @@ const GRID_WIDTH = 2;
 const SCAN_LINE_WIDTH = 3;
 const GRID_BORDER = 0.95;
 const SCAN_LINE_START_ANGLE = 0;
-const SCAN_LINE_FREQUENCY = 10;
+const SCAN_LINE_FREQUENCY = 100;
+const SCAN_RESOLUTION = 10;
 
 function Indicator({
     startX,
@@ -20,7 +21,7 @@ function Indicator({
     this.background = INDICATOR_BACKGROUND;
     this.grid = {
         edge: GRID_BORDER,
-        rings: createRings(this),
+        rings: createRings(),
         color: GRID_COLOR,
         width: GRID_WIDTH,
         sectorCount: SECTOR_AMOUNT,
@@ -30,6 +31,7 @@ function Indicator({
         width: SCAN_LINE_WIDTH,
         color: SCAN_LINE_COLOR,
         frequency: SCAN_LINE_FREQUENCY,
+        resolution: SCAN_RESOLUTION,
     };
 }
 
@@ -37,7 +39,7 @@ function Ring(position) {
     this.position = position;
 }
 
-function createRings(indicator) {
+function createRings() {
     let rings = [];
     for (let i = 0; i < RING_AMOUNT; i++) {
         const position = GRID_BORDER * (i + 1) / RING_AMOUNT;
@@ -109,12 +111,56 @@ function redraw({ctx, indicator,}) {
     drawIndicator({ctx, indicator,});
 }
 
-function updateScanLine({indicator, dt}) {
-    indicator.scanLine.angle += 2 * Math.PI * dt / indicator.scanLine.frequency;
+function updateScanLine({dt, indicator,}) {
+    const scanLine = indicator.scanLine;
+    const deltaAngle = 2 * Math.PI * dt / scanLine.frequency;
+    scanLine.angle = (scanLine.angle + deltaAngle) % (2 * Math.PI);
+}
+
+function transmit() {
+    //TODO: излучать сигнал в секторе
+    //TODO: цели в секторе должны давать отклик
+    //TODO: отклик состоит из зашумленного сигнала и задержки
+    //TODO: отклик лежит в массиве откликов (обнулять в каждой итерации) для данного сектора
+}
+
+function recieve() {
+    //TODO: если массив откликов не пустой, пропустить отклик через окно (длина = длине сигнала) и через СФ
+    //TODO: максимальный результат СФ лежат в массиве откликов СФ
+    //TODO: по наибольшему значению результатов СФ принять решение о наличиии/пропуске сигнала
+    //TODO: при наличии сигнала определить временную задержку, записать в массив задержек
+}
+
+function process() {
+    //TODO; вычислить расстояние до цели и записать в массив обнаруженных целей (добавить время жизни)
+}
+
+function scan({dt, indicator,}) {
+    const resolution = indicator.scanLine.resolution;
+
+    const prevAngle = indicator.scanLine.angle;
+    updateScanLine({dt, indicator,});
+    const curAngle = indicator.scanLine.angle;
+
+    const deltaAngle = curAngle - prevAngle;
+    const deltaSector = deltaAngle / resolution;
+
+    for (let i = 0; i < resolution; i++) {
+        const sector = {
+            start: prevAngle + i * deltaSector,
+            end: prevAngle + (i + 1) * deltaSector,
+        };
+
+        //transmit();
+        //recieve();
+        //process();
+    }
 }
 
 function update({dt, indicator,}) {
-    updateScanLine({dt, indicator, });
+    scan({dt, indicator,});
+
+    console.log((indicator.scanLine.angle * 180 / Math.PI).toFixed(1));
 }
 
 function main() {
