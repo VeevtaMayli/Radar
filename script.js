@@ -59,7 +59,7 @@ function Indicator({
         create: () => {
             const samples = this.signal.samples;
             this.filter.samples = samples.reverse();
-        }
+        },
     };
 }
 
@@ -145,48 +145,53 @@ function updateScanLine({dt, indicator,}) {
     scanLine.angle = (scanLine.angle + deltaAngle) % (2 * Math.PI);
 }
 
-function transmit() {
+function transmit({signal, startAngle, stopAngle, responses, targets}) {
     //TODO: излучать сигнал в секторе
     //TODO: цели в секторе должны давать отклик
     //TODO: отклик состоит из зашумленного сигнала и задержки
     //TODO: отклик лежит в массиве откликов (обнулять в каждой итерации) для данного сектора
+
 }
 
-function receive() {
+function receive({signal, filter, responses, echoes}) {
     //TODO: если массив откликов не пустой, пропустить отклик через окно (длина = длине сигнала) и через СФ
     //TODO: максимальный результат СФ лежат в массиве откликов СФ
     //TODO: по наибольшему значению результатов СФ принять решение о наличиии/пропуске сигнала
     //TODO: при наличии сигнала определить временную задержку, записать в массив задержек
 }
 
-function process() {
+function process({echoes, detectedTargets}) {
     //TODO; вычислить расстояние до цели и записать в массив обнаруженных целей (добавить время жизни)
 }
 
 function scan({dt, indicator,}) {
-    const resolution = indicator.scanLine.resolution;
-
+    const signal = indicator.signal.samples;
+    const filter = indicator.filter.samples;
     const prevAngle = indicator.scanLine.angle;
     updateScanLine({dt, indicator,});
     const curAngle = indicator.scanLine.angle;
 
-    const deltaSector = curAngle - prevAngle;
+    const responses = [];
+    const echoes = [];
 
-    //console.log(prevAngle);
-    //console.log(curAngle);
-    //console.log(deltaAngle);
-    //console.log(dt);
-
-    //transmit();
-    //receive();
-    //process();
-
-    //console.log(sector);
+    transmit({
+        signal,
+        startAngle: prevAngle,
+        stopAngle: curAngle,
+        responses,
+        /*targets*/
+    });
+    receive({signal, filter, responses, echoes});
+    process({echoes, /*detectedTargets*/});
 }
 
 function update({dt, indicator,}) {
     scan({dt, indicator,});
-    console.log(indicator);
+}
+
+function initialize({indicator,}) {
+    indicator.signal.sampling();
+    indicator.filter.create();
 }
 
 function main() {
@@ -202,10 +207,10 @@ function main() {
         radius: width / 2,
         color: 'black',
     });
+//TODO: добавить цели
+//TODO: добавить обнаруженные цели
 
-    indicator.signal.sampling();
-    indicator.filter.create();
-
+    initialize({indicator,});
     redraw({ctx, indicator,});
 
     let lastTimestamp = Date.now();
@@ -218,7 +223,7 @@ function main() {
             dt: deltaTime,
             indicator,
         });
-        redraw({ctx, indicator});
+        redraw({ctx, indicator,});
         requestAnimationFrame(animateFn);
     };
     animateFn();
