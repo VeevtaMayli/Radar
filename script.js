@@ -1,14 +1,13 @@
 const INDICATOR_BACKGROUND = 'black';
 const GRID_COLOR = 'green';
 const SCAN_LINE_COLOR = 'red';
-const RING_AMOUNT = 5;
-const SECTOR_AMOUNT = 8;
-const GRID_WIDTH = 2;
-const SCAN_LINE_WIDTH = 3;
+const RING_AMOUNT = 8;
+const SECTOR_AMOUNT = 16;
+const GRID_WIDTH = 1;
+const SCAN_LINE_WIDTH = 2;
 const GRID_BORDER = 0.95;
 const SCAN_LINE_START_ANGLE = 0;
-const SCAN_LINE_FREQUENCY = 100;
-const SCAN_RESOLUTION = 10;
+const SCAN_LINE_PERIOD = 60;
 
 function Indicator({
     startX,
@@ -30,8 +29,37 @@ function Indicator({
         angle: SCAN_LINE_START_ANGLE,
         width: SCAN_LINE_WIDTH,
         color: SCAN_LINE_COLOR,
-        frequency: SCAN_LINE_FREQUENCY,
-        resolution: SCAN_RESOLUTION,
+        frequency: SCAN_LINE_PERIOD,
+    };
+    this.signal = {
+        td: 5E-9,
+        speed: 3E+8,
+        amplitude: 2E+4,
+        duration: 1E-7,
+        carrier: 2E+7,
+        function: (t) => {
+            const a = this.signal.amplitude;
+            const f = this.signal.carrier;
+            const duration = this.signal.duration;
+
+            return t >= 0 && t <= duration ? a * Math.sin(2 * Math.PI * f * t) : 0;
+        },
+        sampling: () => {
+            const td = this.signal.td;
+            const amount = Math.floor(this.signal.duration / td);
+            const signal = this.signal.function;
+
+            this.signal.samples = new Array(amount).fill(0);
+            this.signal.samples.forEach((s, i, a) => {
+                a[i] = signal(i * td);
+            });
+        },
+    };
+    this.filter = {
+        create: () => {
+            const samples = this.signal.samples;
+            this.filter.samples = samples.reverse();
+        }
     };
 }
 
@@ -100,7 +128,7 @@ function drawScanLine({ctx, indicator,}) {
     const edge = indicator.grid.edge * indicator.radius;
 
     ctx.strokeStyle = indicator.scanLine.color;
-    ctx.lineWidth = indicator.scanLine.lineWidth;
+    ctx.lineWidth = indicator.scanLine.width;
     ctx.beginPath();
     ctx.moveTo(x, y);
     ctx.lineTo(x + Math.sin(angle) * edge, y - Math.cos(angle) * edge);
@@ -124,7 +152,7 @@ function transmit() {
     //TODO: отклик лежит в массиве откликов (обнулять в каждой итерации) для данного сектора
 }
 
-function recieve() {
+function receive() {
     //TODO: если массив откликов не пустой, пропустить отклик через окно (длина = длине сигнала) и через СФ
     //TODO: максимальный результат СФ лежат в массиве откликов СФ
     //TODO: по наибольшему значению результатов СФ принять решение о наличиии/пропуске сигнала
@@ -142,25 +170,23 @@ function scan({dt, indicator,}) {
     updateScanLine({dt, indicator,});
     const curAngle = indicator.scanLine.angle;
 
-    const deltaAngle = curAngle - prevAngle;
-    const deltaSector = deltaAngle / resolution;
+    const deltaSector = curAngle - prevAngle;
 
-    for (let i = 0; i < resolution; i++) {
-        const sector = {
-            start: prevAngle + i * deltaSector,
-            end: prevAngle + (i + 1) * deltaSector,
-        };
+    //console.log(prevAngle);
+    //console.log(curAngle);
+    //console.log(deltaAngle);
+    //console.log(dt);
 
-        //transmit();
-        //recieve();
-        //process();
-    }
+    //transmit();
+    //receive();
+    //process();
+
+    //console.log(sector);
 }
 
 function update({dt, indicator,}) {
     scan({dt, indicator,});
-
-    console.log((indicator.scanLine.angle * 180 / Math.PI).toFixed(1));
+    console.log(indicator);
 }
 
 function main() {
@@ -176,6 +202,9 @@ function main() {
         radius: width / 2,
         color: 'black',
     });
+
+    indicator.signal.sampling();
+    indicator.filter.create();
 
     redraw({ctx, indicator,});
 
