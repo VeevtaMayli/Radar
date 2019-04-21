@@ -16,7 +16,7 @@ const SIGNAL_DURATION = 1E-5;
 const SIGNAL_CARRIER = 2E+5;
 const SIGNAL_ATTENUATION_RATIO = 3E-3;
 const SIGNAL_NOISE_LEVEL = 2E-8;
-
+const RESPONSE_LIMIT = 0.85;
 
 function Indicator({startX, startY, radius}) {
     this.x = startX;
@@ -45,6 +45,7 @@ function Indicator({startX, startY, radius}) {
         attenuationRatio: SIGNAL_ATTENUATION_RATIO,
         noiseLevel: SIGNAL_NOISE_LEVEL,
         maxDistance: SIGNAL_MAX_DISTANCE,
+        responseLimit: RESPONSE_LIMIT,
         function: (t) => {
             const a = this.signal.amplitude;
             const f = this.signal.carrier;
@@ -217,40 +218,59 @@ function transmit({signal, startAngle, stopAngle, responses, targets}) {
     });
 }
 
+function filtration({signal, filter}) {
+    const signalSize = signal.length;
+    const responseSize = 2 * signalSize - 1;
+    const responses = new Array(responseSize).fill(0);
+
+    for (let n = 0; n < signalSize; n++) {
+        responses.forEach((response, m, responses) => {
+            if (m - n >= 0 && m-n <= responseSize - signalSize) {
+                responses[m] += signal[n] * filter[m - n];
+            }
+        });
+    }
+
+    return responses;
+}
+
+function normalization({response, signal, filterNorm}) {
+    const signalNorm = getNorm(signal);
+    const norm = signalNorm * filterNorm;
+
+    return Math.max(...response) / norm;
+}
+
 function receive({signal, filter, responses, echoes}) {
     if (responses.length === 0) return;
 
     const window = signal.samples.length;
-    const m = 2 * window - 1;
 
     responses.forEach((response) => {
         const maxFilterResponses = [];
         for (let section = 0; section < response.length - window; section++) {
-            const filterResponses = new Array(m).fill(0);
             const responsePart = response.slice(section, section + window);
-            const responsePartNorm = getNorm(responsePart);
-            const norm = responsePartNorm * filter.norm;
-            for (let n = 0; n < window; n++) {
-                filterResponses.forEach((r, i, fr) => {
-                    if (i - n >= 0 && i-n <= m - window) {
-                        fr[i] += responsePart[n] * filter.samples[i - n];
-                    }
-                });
-            }
+            const filterResponses = filtration({
+                signal: responsePart,
+                filter: filter.samples,
+            });
 
-            maxFilterResponses.push(Math.max(...filterResponses) / norm);
+            maxFilterResponses.push(normalization({
+                response: filterResponses,
+                signal: responsePart,
+                filterNorm: filter.norm,
+            }));
         }
 
         const maxFilterResponse = Math.max(...maxFilterResponses);
-        const position = maxFilterResponses.indexOf(maxFilterResponse) + 1;
-        const delay = position * signal.td;
 
-        echoes.push(delay);
+        if (maxFilterResponse >= signal.responseLimit) {
+            const position = maxFilterResponses.indexOf(maxFilterResponse) + 1;
+            const delay = position * signal.td;
+            echoes.push(delay);
+        }
         //console.log(maxFilterResponse, position * signal.td * signal.speed / 2);
     });
-
-    //TODO: по наибольшему значению результатов СФ принять решение о наличиии/пропуске сигнала
-    //TODO: при наличии сигнала определить временную задержку, записать в массив задержек
 }
 
 function process({echoes, detectedTargets}) {
