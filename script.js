@@ -8,7 +8,15 @@ const SCAN_LINE_WIDTH = 2;
 const GRID_BORDER = 0.95;
 const SCAN_LINE_START_ANGLE = 0;
 const SCAN_LINE_PERIOD = 6;
-const DISTANCE_MAX = 40000;
+const SIGNAL_MAX_DISTANCE = 4E+4;
+const SAMPLING_INTERVAL = 5E-7;
+const LIGHT_VELOCITY = 3E+8;
+const SIGNAL_AMPLITUDE = 2E+4;
+const SIGNAL_DURATION = 1E-5;
+const SIGNAL_CARRIER = 2E+5;
+const SIGNAL_ATTENUATION_RATIO = 3E-3;
+const SIGNAL_NOISE_LEVEL = 2E-8;
+
 
 function Indicator({startX, startY, radius}) {
     this.x = startX;
@@ -29,14 +37,14 @@ function Indicator({startX, startY, radius}) {
         frequency: SCAN_LINE_PERIOD,
     };
     this.signal = {
-        td: 5E-9,
-        speed: 3E+8,
-        amplitude: 2E+4,
-        duration: 1E-7,
-        carrier: 2E+7,
-        attenuationRatio: 3E-3,
-        noiseLevel: 2E-8,
-        maxDistance: DISTANCE_MAX,
+        td: SAMPLING_INTERVAL,
+        speed: LIGHT_VELOCITY,
+        amplitude: SIGNAL_AMPLITUDE,
+        duration: SIGNAL_DURATION,
+        carrier: SIGNAL_CARRIER,
+        attenuationRatio: SIGNAL_ATTENUATION_RATIO,
+        noiseLevel: SIGNAL_NOISE_LEVEL,
+        maxDistance: SIGNAL_MAX_DISTANCE,
         function: (t) => {
             const a = this.signal.amplitude;
             const f = this.signal.carrier;
@@ -57,8 +65,9 @@ function Indicator({startX, startY, radius}) {
     };
     this.filter = {
         create: () => {
-            const samples = this.signal.samples;
-            this.filter.samples = samples.reverse();
+            const samples = this.signal.samples.slice().reverse();
+            this.filter.samples = samples;
+            this.filter.norm = getNorm(samples);
         },
     };
 }
@@ -79,6 +88,12 @@ function createRings() {
         rings.push(new Ring(position));
     }
     return rings;
+}
+
+function getNorm(samples) {
+    return Math.sqrt(samples.reduce((norm, sample) => {
+        return norm + Math.pow(sample, 2);
+    }, 0));
 }
 
 function drawBackground({ctx, indicator}) {
@@ -195,14 +210,45 @@ function transmit({signal, startAngle, stopAngle, responses, targets}) {
         let response = new Array(nSamples).fill(0);
 
         response = response.concat(dumpedSamples);
-        response += (1 - 0.5 * Math.random()) * signal.noiseLevel;
+        response.forEach((response, i, responses) => {
+            responses[i] += (1 - 0.5 * Math.random()) * signal.noiseLevel;
+        });
         responses.push(response);
     });
 }
 
 function receive({signal, filter, responses, echoes}) {
-    //TODO: если массив откликов не пустой, пропустить отклик через окно (длина = длине сигнала) и через СФ
-    //TODO: максимальный результат СФ лежат в массиве откликов СФ
+    if (responses.length === 0) return;
+
+    const window = signal.samples.length;
+    const m = 2 * window - 1;
+
+    responses.forEach((response) => {
+        const maxFilterResponses = [];
+        for (let section = 0; section < response.length - window; section++) {
+            const filterResponses = new Array(m).fill(0);
+            const responsePart = response.slice(section, section + window);
+            const responsePartNorm = getNorm(responsePart);
+            const norm = responsePartNorm * filter.norm;
+            for (let n = 0; n < window; n++) {
+                filterResponses.forEach((r, i, fr) => {
+                    if (i - n >= 0 && i-n <= m - window) {
+                        fr[i] += responsePart[n] * filter.samples[i - n];
+                    }
+                });
+            }
+
+            maxFilterResponses.push(Math.max(...filterResponses) / norm);
+        }
+
+        const maxFilterResponse = Math.max(...maxFilterResponses);
+        const position = maxFilterResponses.indexOf(maxFilterResponse) + 1;
+        const delay = position * signal.td;
+
+        echoes.push(delay);
+        //console.log(maxFilterResponse, position * signal.td * signal.speed / 2);
+    });
+
     //TODO: по наибольшему значению результатов СФ принять решение о наличиии/пропуске сигнала
     //TODO: при наличии сигнала определить временную задержку, записать в массив задержек
 }
@@ -213,7 +259,7 @@ function process({echoes, detectedTargets}) {
 
 function scan({dt, indicator, targets}) {
     const signal = indicator.signal;
-    const filter = indicator.filter.samples;
+    const filter = indicator.filter;
     const prevAngle = indicator.scanLine.angle;
     updateScanLine({dt, indicator});
     const curAngle = indicator.scanLine.angle;
@@ -232,7 +278,7 @@ function scan({dt, indicator, targets}) {
     receive({signal, filter, responses, echoes});
     process({echoes});
 
-    console.log(responses);
+    if (echoes.length !== 0) console.log(echoes);
 }
 
 function update({dt, indicator, targets}) {
@@ -243,15 +289,19 @@ function initialize({indicator, targets}) {
     indicator.signal.sampling();
     indicator.filter.create();
 
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 0; i++) {
         targets.push(new Target({
             radius: (Math.random() * indicator.radius * (indicator.grid.edge - indicator.grid.rings[0].position) + indicator.radius * indicator.grid.rings[0].position)
                 * indicator.signal.maxDistance / 450 * 0.95,
             angle: Math.random() * 2 * Math.PI,
         }));
     }
+    targets.push(new Target({radius: 40000, angle: 1.5}));
+    targets.push(new Target({radius: 20000, angle: 1.5}));
+    targets.push(new Target({radius: 39000, angle: 1.55}));
+    targets.push(new Target({radius: 38000, angle: 1.6}));
 
-    //console.log(indicator, targets);
+    console.log(indicator, targets);
 }
 
 function main() {
