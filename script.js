@@ -7,13 +7,10 @@ const GRID_WIDTH = 1;
 const SCAN_LINE_WIDTH = 2;
 const GRID_BORDER = 0.95;
 const SCAN_LINE_START_ANGLE = 0;
-const SCAN_LINE_PERIOD = 60;
+const SCAN_LINE_PERIOD = 6;
+const DISTANCE_MAX = 40000;
 
-function Indicator({
-    startX,
-    startY,
-    radius,
-}) {
+function Indicator({startX, startY, radius}) {
     this.x = startX;
     this.y = startY;
     this.radius = radius;
@@ -37,6 +34,9 @@ function Indicator({
         amplitude: 2E+4,
         duration: 1E-7,
         carrier: 2E+7,
+        attenuationRatio: 3E-3,
+        noiseLevel: 2E-8,
+        maxDistance: DISTANCE_MAX,
         function: (t) => {
             const a = this.signal.amplitude;
             const f = this.signal.carrier;
@@ -63,12 +63,17 @@ function Indicator({
     };
 }
 
+function Target({radius, angle}) {
+    this.radius = radius;
+    this.angle = angle;
+}
+
 function Ring(position) {
     this.position = position;
 }
 
 function createRings() {
-    let rings = [];
+    const rings = [];
     for (let i = 0; i < RING_AMOUNT; i++) {
         const position = GRID_BORDER * (i + 1) / RING_AMOUNT;
         rings.push(new Ring(position));
@@ -76,21 +81,14 @@ function createRings() {
     return rings;
 }
 
-function drawIndicator({ctx, indicator,}) {
-    drawBackground({ctx, indicator});
-    drawRings({ctx, indicator});
-    drawGrid({ctx, indicator});
-    drawScanLine({ctx, indicator});
-}
-
-function drawBackground({ctx, indicator,}) {
+function drawBackground({ctx, indicator}) {
     ctx.fillStyle = indicator.background;
     ctx.beginPath();
     ctx.arc(indicator.x, indicator.y, indicator.radius, 0, 2 * Math.PI);
     ctx.fill();
 }
 
-function drawRing({ctx, indicator, ring,}) {
+function drawRing({ctx, indicator, ring}) {
     ctx.strokeStyle = indicator.grid.color;
     ctx.lineWidth = indicator.grid.width;
     ctx.beginPath();
@@ -98,13 +96,13 @@ function drawRing({ctx, indicator, ring,}) {
     ctx.stroke();
 }
 
-function drawRings({ctx, indicator,}) {
+function drawRings({ctx, indicator}) {
     indicator.grid.rings.forEach((ring) => {
         drawRing({ctx, indicator, ring});
-    })
+    });
 }
 
-function drawGrid({ctx, indicator,}) {
+function drawGrid({ctx, indicator}) {
     const x = indicator.x;
     const y = indicator.y;
     const sectorCount = indicator.grid.sectorCount;
@@ -121,7 +119,7 @@ function drawGrid({ctx, indicator,}) {
     ctx.stroke();
 }
 
-function drawScanLine({ctx, indicator,}) {
+function drawScanLine({ctx, indicator}) {
     const x = indicator.x;
     const y = indicator.y;
     const angle = indicator.scanLine.angle;
@@ -135,22 +133,71 @@ function drawScanLine({ctx, indicator,}) {
     ctx.stroke();
 }
 
-function redraw({ctx, indicator,}) {
-    drawIndicator({ctx, indicator,});
+function drawTarget({ctx, target, indicator}) {
+    if (target.radius > indicator.signal.maxDistance) return;
+
+    const radius = target.radius * indicator.radius * indicator.grid.edge / indicator.signal.maxDistance;
+    const angle = target.angle;
+
+    ctx.fillStyle = 'yellow';
+    ctx.beginPath();
+    ctx.arc(indicator.x + radius * Math.sin(angle), indicator.y - radius * Math.cos(angle), 5, 0, 2 * Math.PI);
+    ctx.fill();
 }
 
-function updateScanLine({dt, indicator,}) {
+function drawIndicator({ctx, indicator}) {
+    drawBackground({ctx, indicator});
+    drawRings({ctx, indicator});
+    drawGrid({ctx, indicator});
+    drawScanLine({ctx, indicator});
+}
+
+function redraw({ctx, indicator, targets}) {
+    drawIndicator({ctx, indicator});
+
+    targets.forEach((target) => {
+        drawTarget({ctx, indicator, target});
+    });
+}
+
+function updateScanLine({dt, indicator}) {
     const scanLine = indicator.scanLine;
     const deltaAngle = 2 * Math.PI * dt / scanLine.frequency;
     scanLine.angle = (scanLine.angle + deltaAngle) % (2 * Math.PI);
 }
 
-function transmit({signal, startAngle, stopAngle, responses, targets}) {
-    //TODO: излучать сигнал в секторе
-    //TODO: цели в секторе должны давать отклик
-    //TODO: отклик состоит из зашумленного сигнала и задержки
-    //TODO: отклик лежит в массиве откликов (обнулять в каждой итерации) для данного сектора
+function angleInsideSector({minAngle, maxAngle, angle}) {
+    return minAngle < maxAngle
+        ? angle >= minAngle && angle < maxAngle
+        : angle >= minAngle && angle < 2 * Math.PI || angle >= 0 && angle < maxAngle;
+}
 
+function transmit({signal, startAngle, stopAngle, responses, targets}) {
+    const targetsInSector = targets.filter((target) => {
+        return angleInsideSector({
+            minAngle: startAngle,
+            maxAngle: stopAngle,
+            angle: target.angle,
+        });
+    });
+
+    if (targetsInSector.length === 0) return;
+
+    targetsInSector.forEach((target) => {
+        const attenuation = Math.pow(10, -0.1 * signal.attenuationRatio * target.radius);
+        const dumpedSamples = signal.samples.slice();
+        dumpedSamples.forEach((sample, i, samples) => {
+            samples[i] = attenuation * sample;
+        });
+
+        const delay = 2 * target.radius / signal.speed;
+        const nSamples = Math.floor(delay / signal.td);
+        let response = new Array(nSamples).fill(0);
+
+        response = response.concat(dumpedSamples);
+        response += (1 - 0.5 * Math.random()) * signal.noiseLevel;
+        responses.push(response);
+    });
 }
 
 function receive({signal, filter, responses, echoes}) {
@@ -164,13 +211,14 @@ function process({echoes, detectedTargets}) {
     //TODO; вычислить расстояние до цели и записать в массив обнаруженных целей (добавить время жизни)
 }
 
-function scan({dt, indicator,}) {
-    const signal = indicator.signal.samples;
+function scan({dt, indicator, targets}) {
+    const signal = indicator.signal;
     const filter = indicator.filter.samples;
     const prevAngle = indicator.scanLine.angle;
-    updateScanLine({dt, indicator,});
+    updateScanLine({dt, indicator});
     const curAngle = indicator.scanLine.angle;
 
+    if (prevAngle === curAngle) return;
     const responses = [];
     const echoes = [];
 
@@ -179,39 +227,52 @@ function scan({dt, indicator,}) {
         startAngle: prevAngle,
         stopAngle: curAngle,
         responses,
-        /*targets*/
+        targets,
     });
     receive({signal, filter, responses, echoes});
-    process({echoes, /*detectedTargets*/});
+    process({echoes});
+
+    console.log(responses);
 }
 
-function update({dt, indicator,}) {
-    scan({dt, indicator,});
+function update({dt, indicator, targets}) {
+    scan({dt, indicator, targets});
 }
 
-function initialize({indicator,}) {
+function initialize({indicator, targets}) {
     indicator.signal.sampling();
     indicator.filter.create();
+
+    for (let i = 0; i < 10; i++) {
+        targets.push(new Target({
+            radius: (Math.random() * indicator.radius * (indicator.grid.edge - indicator.grid.rings[0].position) + indicator.radius * indicator.grid.rings[0].position)
+                * indicator.signal.maxDistance / 450 * 0.95,
+            angle: Math.random() * 2 * Math.PI,
+        }));
+    }
+
+    //console.log(indicator, targets);
 }
 
 function main() {
     const canvasEl = document.getElementById('canvas');
     const width = canvasEl.offsetWidth;
-	const height = canvasEl.offsetHeight;
-    
+    const height = canvasEl.offsetHeight;
+
     const ctx = canvasEl.getContext('2d');
 
-    let indicator = new Indicator({
+    const indicator = new Indicator({
         startX: width / 2,
         startY: height / 2,
         radius: width / 2,
         color: 'black',
     });
-//TODO: добавить цели
-//TODO: добавить обнаруженные цели
 
-    initialize({indicator,});
-    redraw({ctx, indicator,});
+    const targets = [];
+    //TODO: добавить обнаруженные цели
+
+    initialize({indicator, targets});
+    redraw({ctx, indicator, targets});
 
     let lastTimestamp = Date.now();
     const animateFn = () => {
@@ -222,8 +283,9 @@ function main() {
         update({
             dt: deltaTime,
             indicator,
+            targets,
         });
-        redraw({ctx, indicator,});
+        redraw({ctx, indicator, targets});
         requestAnimationFrame(animateFn);
     };
     animateFn();
