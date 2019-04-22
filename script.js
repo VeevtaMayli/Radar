@@ -1,6 +1,8 @@
-const INDICATOR_BACKGROUND = 'black';
-const GRID_COLOR = 'green';
-const SCAN_LINE_COLOR = 'red';
+const INDICATOR_BACKGROUND = '#000000';
+const GRID_COLOR = '#0b601a';
+const SCAN_LINE_COLOR = '#0f8b1e';
+const TARGET_COLOR = 'rgba(255,204,000,1)';
+const TARGET_SIZE = 5;
 const RING_AMOUNT = 8;
 const SECTOR_AMOUNT = 16;
 const GRID_WIDTH = 1;
@@ -17,6 +19,7 @@ const SIGNAL_CARRIER = 2E+5;
 const SIGNAL_ATTENUATION_RATIO = 3E-3;
 const SIGNAL_NOISE_LEVEL = 2E-8;
 const RESPONSE_LIMIT = 0.85;
+const TARGET_ALPHA_LIMIT = 0.15;
 
 function Indicator({startX, startY, radius}) {
     this.x = startX;
@@ -34,7 +37,7 @@ function Indicator({startX, startY, radius}) {
         angle: SCAN_LINE_START_ANGLE,
         width: SCAN_LINE_WIDTH,
         color: SCAN_LINE_COLOR,
-        frequency: SCAN_LINE_PERIOD,
+        period: SCAN_LINE_PERIOD,
     };
     this.signal = {
         td: SAMPLING_INTERVAL,
@@ -76,6 +79,8 @@ function Indicator({startX, startY, radius}) {
 function Target({radius, angle}) {
     this.radius = radius;
     this.angle = angle;
+    this.color = TARGET_COLOR;
+    this.size = TARGET_SIZE;
 }
 
 function Ring(position) {
@@ -150,14 +155,17 @@ function drawScanLine({ctx, indicator}) {
 }
 
 function drawTarget({ctx, target, indicator}) {
-    if (target.radius > indicator.signal.maxDistance) return;
+    const maxDistance = indicator.signal.maxDistance;
+    const distance = target.radius;
+    const maxDistancePx = indicator.radius * indicator.grid.edge;
+    if (distance > maxDistance) return;
 
-    const radius = target.radius * indicator.radius * indicator.grid.edge / indicator.signal.maxDistance;
+    const radius = distance * maxDistancePx / maxDistance;
     const angle = target.angle;
 
-    ctx.fillStyle = 'yellow';
+    ctx.fillStyle = target.color;
     ctx.beginPath();
-    ctx.arc(indicator.x + radius * Math.sin(angle), indicator.y - radius * Math.cos(angle), 5, 0, 2 * Math.PI);
+    ctx.arc(indicator.x + radius * Math.sin(angle), indicator.y - radius * Math.cos(angle), target.size, 0, 2 * Math.PI);
     ctx.fill();
 }
 
@@ -178,7 +186,7 @@ function redraw({ctx, indicator, targets}) {
 
 function updateScanLine({dt, indicator}) {
     const scanLine = indicator.scanLine;
-    const deltaAngle = 2 * Math.PI * dt / scanLine.frequency;
+    const deltaAngle = 2 * Math.PI * dt / scanLine.period;
     scanLine.angle = (scanLine.angle + deltaAngle) % (2 * Math.PI);
 }
 
@@ -230,7 +238,6 @@ function filtration({signal, filter}) {
             }
         });
     }
-
     return responses;
 }
 
@@ -269,15 +276,20 @@ function receive({signal, filter, responses, echoes}) {
             const delay = position * signal.td;
             echoes.push(delay);
         }
-        //console.log(maxFilterResponse, position * signal.td * signal.speed / 2);
     });
 }
 
-function process({echoes, detectedTargets}) {
-    //TODO; вычислить расстояние до цели и записать в массив обнаруженных целей (добавить время жизни)
+function process({angle, echoes, detectedTargets}) {
+    echoes.forEach((echo) => {
+        detectedTargets.push(new Target({
+            radius: echo * LIGHT_VELOCITY / 2,
+            angle,
+        }));
+        detectedTargets[detectedTargets.length - 1].lifetime = 1;
+    });
 }
 
-function scan({dt, indicator, targets}) {
+function scan({dt, indicator, targets, detectedTargets}) {
     const signal = indicator.signal;
     const filter = indicator.filter;
     const prevAngle = indicator.scanLine.angle;
@@ -296,32 +308,49 @@ function scan({dt, indicator, targets}) {
         targets,
     });
     receive({signal, filter, responses, echoes});
-    process({echoes});
-
-    if (echoes.length !== 0) console.log(echoes);
+    process({
+        angle: curAngle,
+        echoes,
+        detectedTargets,
+    });
 }
 
-function update({dt, indicator, targets}) {
-    scan({dt, indicator, targets});
+function attenuateTarget({dt, indicator, target}) {
+    target.lifetime -= dt / indicator.scanLine.period;
+
+    if (target.lifetime > TARGET_ALPHA_LIMIT) {
+        const rgb = target.color.slice(0, 17);
+        target.color = rgb + target.lifetime + ')';
+    }
+}
+
+function update({dt, indicator, targets, detectedTargets}) {
+    scan({dt, indicator, targets, detectedTargets});
+
+    detectedTargets.forEach((target, i, targets) => {
+        attenuateTarget({dt, indicator, target});
+        if (target.lifetime <= 0) {
+            delete targets[i];
+        }
+    });
 }
 
 function initialize({indicator, targets}) {
     indicator.signal.sampling();
     indicator.filter.create();
 
-    for (let i = 0; i < 0; i++) {
+    for (let i = 0; i < 10; i++) {
         targets.push(new Target({
             radius: (Math.random() * indicator.radius * (indicator.grid.edge - indicator.grid.rings[0].position) + indicator.radius * indicator.grid.rings[0].position)
-                * indicator.signal.maxDistance / 450 * 0.95,
+                * indicator.signal.maxDistance / (indicator.radius * indicator.grid.edge),
             angle: Math.random() * 2 * Math.PI,
         }));
     }
     targets.push(new Target({radius: 40000, angle: 1.5}));
     targets.push(new Target({radius: 20000, angle: 1.5}));
-    targets.push(new Target({radius: 39000, angle: 1.55}));
-    targets.push(new Target({radius: 38000, angle: 1.6}));
-
-    console.log(indicator, targets);
+    targets.push(new Target({radius: 39000, angle: 0.55}));
+    targets.push(new Target({radius: 38000, angle: 2.6}));
+     targets.push(new Target({radius: 18000, angle: 2.6}));
 }
 
 function main() {
@@ -339,10 +368,14 @@ function main() {
     });
 
     const targets = [];
-    //TODO: добавить обнаруженные цели
+    const detectedTargets = [];
 
     initialize({indicator, targets});
-    redraw({ctx, indicator, targets});
+    redraw({
+        ctx,
+        indicator,
+        targets: detectedTargets,
+    });
 
     let lastTimestamp = Date.now();
     const animateFn = () => {
@@ -354,8 +387,13 @@ function main() {
             dt: deltaTime,
             indicator,
             targets,
+            detectedTargets,
         });
-        redraw({ctx, indicator, targets});
+        redraw({
+            ctx,
+            indicator,
+            targets: detectedTargets,
+        });
         requestAnimationFrame(animateFn);
     };
     animateFn();
