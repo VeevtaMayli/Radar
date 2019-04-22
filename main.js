@@ -10,6 +10,8 @@ import {update} from './updating.js';
 
     const ctx = canvasEl.getContext('2d');
 
+    let time = 0;
+
     const indicator = new Indicator({
         startX: width / 2,
         startY: height / 2,
@@ -32,9 +34,11 @@ import {update} from './updating.js';
         const currentTimestamp = Date.now();
         const deltaTime = (currentTimestamp - lastTimestamp) * 0.001;
         lastTimestamp = currentTimestamp;
+        time += deltaTime;
 
         update({
             dt: deltaTime,
+            time,
             indicator,
             targets,
             detectedTargets,
