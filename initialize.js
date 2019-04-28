@@ -12,8 +12,8 @@ function initialize({indicator, targets}) {
         }));
     }
     //targets.push(new Target({radius: 40000, angle: 1.5}));
-    targets.push(new Target({radius: 30000, angle: Math.PI / 2}));
-    //targets.push(new Target({radius: 39000, angle: 0.55}));
+    targets.push(new Target({radius: 10000, angle: Math.PI / 2, xSpeed: -1000, xAcceleration: 100, type: 'linear'}));
+    targets.push(new Target({radius: 24500, angle: Math.PI / 3, type: 'random'}));
     //targets.push(new Target({radius: 38000, angle: 2.6}));
     //targets.push(new Target({radius: 18000, angle: 2.6}));
 }

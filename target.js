@@ -1,25 +1,14 @@
 import {drawTarget} from './drawing.js';
+import {makeAnglePositive} from './util.js';
 
-const TARGET_COLOR = 'rgba(200,204,000,1)';
+const TARGET_COLOR = 'rgba(200,204,000,1)'; // color only 'rgba(###,###,###,#);'
 const TARGET_SIZE = 5;
-const TARGET_ALPHA_LIMIT = 0.15;
+const TARGET_LIFETIME_IN_PERIODS = 2;
 
-function Target({radius, angle}) {
-    this.radius = radius;
-    this.angle = angle;
-    this.x0 = this.radius * Math.sin(this.angle);
-    this.y0 = -this.radius * Math.cos(this.angle);
-    this.color = TARGET_COLOR;
-    this.size = TARGET_SIZE;
-    this.speed = {
-        x: -1166,
-        y: 0,
-    };
-    this.acceleration = {
-        x: 0,
-        y: 0,
-    };
-    this.motionLaw = (t) => {
+const RANDOM_LAW_SPEED_LIMIT = 500;
+
+const LAW = {
+    linear: function(t) {
         const x0 = this.x0;
         const y0 = this.y0;
         const v = this.speed;
@@ -29,13 +18,44 @@ function Target({radius, angle}) {
         const y = y0 + v.y * t + 0.5 * a.y * Math.pow(t, 2);
 
         const radius = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
-        //console.log({x, radius});
         const angle = Math.atan2(x, -y);
-        return {
-            radius,
-            angle: angle >= 0 ? angle : 2 * Math.PI + angle,
+
+        return {radius, angle: makeAnglePositive(angle)};
+    },
+    random: function(t) {
+        const x0 = this.x0;
+        const y0 = this.y0;
+        const v = {
+            x: (2 * Math.random() - 1) * RANDOM_LAW_SPEED_LIMIT,
+            y: (2 * Math.random() - 1) * RANDOM_LAW_SPEED_LIMIT,
         };
+
+        const x = x0 + v.x * t;
+        const y = y0 + v.y * t;
+
+        const radius = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+        const angle = Math.atan2(x, -y);
+
+        return {radius, angle: makeAnglePositive(angle)};
+    },
+};
+
+function Target({radius, angle, xSpeed = 0, ySpeed = 0, xAcceleration = 0, yAcceleration = 0, type = 'linear'}) {
+    this.radius = radius;
+    this.angle = angle;
+    this.x0 = this.radius * Math.sin(this.angle);
+    this.y0 = -this.radius * Math.cos(this.angle);
+    this.color = TARGET_COLOR;
+    this.size = TARGET_SIZE;
+    this.speed = {
+        x: xSpeed,
+        y: ySpeed,
     };
+    this.acceleration = {
+        x: xAcceleration,
+        y: yAcceleration,
+    };
+    this.motionLaw = LAW[type];
     this.draw = ({ctx, indicator}) => {
         drawTarget({
             ctx,
@@ -44,12 +64,10 @@ function Target({radius, angle}) {
         });
     };
     this.attenuate = ({dt, indicator}) => {
-        this.lifetime -= dt / indicator.scanLine.period;
+        this.lifetime -= dt / indicator.scanLine.period / TARGET_LIFETIME_IN_PERIODS;
 
-        if (this.lifetime > TARGET_ALPHA_LIMIT) {
-            const rgb = this.color.slice(0, 17);
-            this.color = rgb + this.lifetime + ')';
-        }
+        const rgb = this.color.slice(0, 17);
+        this.color = rgb + this.lifetime + ')';
     };
 }
 

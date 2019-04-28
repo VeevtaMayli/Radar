@@ -3,7 +3,7 @@ import {getNorm} from './util.js';
 
 const INDICATOR_BACKGROUND = '#000000';
 const GRID_COLOR = '#11681d ';
-const SECTOR_AMOUNT = 16;
+const SECTOR_AMOUNT = 12;
 const RING_AMOUNT = 4;
 const GRID_WIDTH = 1;
 const GRID_BORDER = 0.95;
@@ -11,7 +11,7 @@ const GRID_BORDER = 0.95;
 const SCAN_LINE_COLOR = '#0fb11f';
 const SCAN_LINE_WIDTH = 3;
 const SCAN_LINE_START_ANGLE = 0;
-const SCAN_LINE_PERIOD = 2;
+const SCAN_LINE_PERIOD = 4;
 
 const SIGNAL_MAX_DISTANCE = 4E+4;
 const SAMPLING_INTERVAL = 5E-7;
