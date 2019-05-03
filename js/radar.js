@@ -125,7 +125,6 @@ function process({angle, echoes, detectedTargets, time}) {
             angle,
         }));
         detectedTargets[detectedTargets.length - 1].lifetime = 1;
-        console.log(detectedTargets[detectedTargets.length - 1].radius, time);
     });
 }
 

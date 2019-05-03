@@ -1,4 +1,5 @@
 import {Indicator} from './indicator.js';
+import {Interface as ui} from './interface.js';
 import {initialize} from './initialize.js';
 import {redraw} from './drawing.js';
 import {update} from './updating.js';
@@ -21,6 +22,13 @@ import {update} from './updating.js';
 
     const targets = [];
     const detectedTargets = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        ui.initialize();
+        document.getElementById('delete_all').addEventListener('click', () => {
+            ui.deleteAllTargets(targets);
+        });
+    });
 
     initialize({indicator, targets});
     redraw({

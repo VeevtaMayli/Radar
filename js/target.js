@@ -41,6 +41,7 @@ const LAW = {
 };
 
 function Target({radius, angle, xSpeed = 0, ySpeed = 0, xAcceleration = 0, yAcceleration = 0, type = 'linear'}) {
+    this.type = type;
     this.radius = radius;
     this.angle = angle;
     this.x0 = this.radius * Math.sin(this.angle);
@@ -55,7 +56,7 @@ function Target({radius, angle, xSpeed = 0, ySpeed = 0, xAcceleration = 0, yAcce
         x: xAcceleration,
         y: yAcceleration,
     };
-    this.motionLaw = LAW[type];
+    this.motionLaw = LAW[this.type];
     this.draw = ({ctx, indicator}) => {
         drawTarget({
             ctx,
