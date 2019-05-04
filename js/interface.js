@@ -1,6 +1,7 @@
 const Interface = {
     deleteAllTargets: deleteAll,
     getNewTarget: get,
+    generateTargetsFile: generateFile,
     initialize: () => {
         modal();
         showTargetOptions();
@@ -23,6 +24,12 @@ function get() {
 function deleteAll(targets) {
     targets.length = 0;
     localStorage['targets'] = JSON.stringify([]);
+}
+
+function generateFile() {
+    const targets = localStorage['targets'];
+    const file = new Blob([targets], {type: 'text/plain'});
+    return URL.createObjectURL(file);
 }
 
 function showTargetOptions() {

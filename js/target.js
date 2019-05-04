@@ -5,7 +5,7 @@ const TARGET_COLOR = 'rgba(200,204,000,1)'; // color only 'rgba(###,###,###,#);'
 const TARGET_SIZE = 5;
 const TARGET_LIFETIME_IN_PERIODS = 2;
 
-const RANDOM_LAW_SPEED_LIMIT = 500;
+const RANDOM_LAW_SPEED_LIMIT = 100;
 
 const LAW = {
     linear: function(t) {

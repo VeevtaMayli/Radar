@@ -29,13 +29,16 @@ import {Target} from './target.js';
         document.getElementById('add').addEventListener('click', () => {
             const targetParameters = ui.getNewTarget();
             targets.push(new Target(targetParameters));
-            //console.log(typeof(JSON.parse(localStorage['targets'])));
             const localTargets = JSON.parse(localStorage['targets']);
             localTargets.push(targetParameters);
             localStorage['targets'] = JSON.stringify(localTargets);
         });
-        document.getElementById('delete_all').addEventListener('click', () => {
+        document.getElementById('delete').addEventListener('click', () => {
             ui.deleteAllTargets(targets);
+        });
+        document.getElementById('save').addEventListener('click', function() {
+            this.href = ui.generateTargetsFile();
+            console.log(this.href);
         });
     });
 
