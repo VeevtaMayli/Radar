@@ -1,5 +1,5 @@
-<!DOCTYPE HTML>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <title>Radar</title>
   <link rel="stylesheet" href="css/bulma.min.css">
@@ -7,21 +7,20 @@
 </head>
 <body>
   <a class="button is-primary modal-button" data-target="add_modal">Add</a>
-  <a class="button is-primary" id="delete_all">Delete all</a>
+  <a class="button is-danger" id="delete_all">Delete all</a>
   <div class="canvas-wrapper">
       <canvas id="canvas" class="canvas" width="700" height="700"></canvas>
   </div>
-  <script src="js/main.js" type="module"></script>
   <div class="modal" id="add_modal">
     <div class="modal-background"></div>
     <div class="modal-content">
-      <div class="box">
+      <form class="box" name="add">
         <h1 class="title">Adding a new target</h1>
         <label class="label">Type of moving</label>
         <div class="field is-grouped">
           <div class="control">
-            <div class="select is-primary first">
-              <select>
+            <div class="select is-primary">
+              <select title="Select type of a target" name="type">
                 <option selected>---</option>
                 <option>Random</option>
                 <option>Linear</option>
@@ -29,51 +28,60 @@
             </div>
           </div>
         </div>
-        <label class="label">Distance</label>
-        <div class="field is-grouped">
-          <div class="control">
-            <input class="input is-primary" type="text" placeholder="Distance in meters" value="25">
+        <div class="field target-option">
+          <label class="label">Distance</label>
+          <div class="field is-grouped">
+            <div class="control">
+              <input class="input is-primary" type="text" placeholder="Distance in meters" title="Distance in meters" value="25000" name="radius">
+            </div>
           </div>
         </div>
-        <label class="label">Angle</label>
-        <div class="field is-grouped">
-          <div class="control">
-            <input class="input is-primary" type="text" placeholder="Angle in degrees" value="0">
+        <div class="field target-option">
+          <label class="label">Angle</label>
+          <div class="field is-grouped">
+            <div class="control">
+              <input class="input is-primary" type="text" placeholder="Angle in degrees" title="Angle in degrees" value="0" name="angle">
+            </div>
           </div>
         </div>
-        <label class="label">Speed</label>
-        <div class="field is-grouped">
-          <div class="control">
-            <input class="input is-primary" type="text" placeholder="X-axis speed in meters per second" value="150">
-          </div>
-          <div class="control">
-            <input class="input is-primary" type="text" placeholder="Y-axis speed in meters per second" value="50">
+        <div class="field linear target-option">
+          <label class="label">Speed</label>
+          <div class="field is-grouped">
+            <div class="control">
+              <input class="input is-primary" type="text" placeholder="X-axis speed in meters per second" title="X-axis speed in meters per second" value="150" name="xSpeed">
+            </div>
+            <div class="control">
+              <input class="input is-primary" type="text" placeholder="Y-axis speed in meters per second" title="Y-axis speed in meters per second" value="50" name="ySpeed">
+            </div>
           </div>
         </div>
-        <label class="label">Acceleration</label>
-        <div class="field is-grouped">
-          <div class="control">
-            <input class="input is-primary" type="text" placeholder="X-axis acceleration in meters per second squared" value="10">
-          </div>
-          <div class="control">
-            <input class="input is-primary" type="text" placeholder="Y-axis acceleration in meters per second squared" value="20">
+        <div class="field linear target-option">
+          <label class="label">Acceleration</label>
+          <div class="field is-grouped">
+            <div class="control">
+              <input class="input is-primary" type="text" placeholder="X-axis acceleration in meters per second squared" title="X-axis acceleration in meters per second squared"value="10" name="xAcceleration">
+            </div>
+            <div class="control">
+              <input class="input is-primary" type="text" placeholder="Y-axis acceleration in meters per second squared" title="Y-axis acceleration in meters per second squared"value="20" name="yAcceleration">
+            </div>
           </div>
         </div>
         <div class="field is-grouped">
           <p class="control">
-            <button class="button is-primary" id="add">
+            <button class="button is-primary" id="add" title="Add a new target" disabled>
               Add
             </button>
           </p>
           <p class="control">
-            <button class="button is-danger">
+            <button class="button is-danger" title="Cancel">
               Cancel
             </button>
           </p>
         </div>
-      </div>
+      </>
     </div>
     <button class="modal-close is-large" aria-label="close"></button>
   </div>
+  <script src="./js/main.js" type="module"></script>
 </body>
 </html>

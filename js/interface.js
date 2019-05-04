@@ -1,13 +1,54 @@
 const Interface = {
-    deleteAllTargets: function(targets) {
-        targets.length = 0;
-        delete localStorage['targets'];
+    deleteAllTargets: deleteAll,
+    getNewTarget: get,
+    initialize: () => {
+        modal();
+        showTargetOptions();
     },
-    addNewTarget: function(target) {
-
-    },
-    initialize: modal,
 };
+
+function get() {
+    const form = document['add'];
+    return {
+        type: form.type.value.toLowerCase(),
+        radius: parseInt(form.radius.value),
+        angle: parseInt(form.angle.value) * Math.PI / 180,
+        xSpeed: parseInt(form.xSpeed.value),
+        ySpeed: parseInt(form.ySpeed.value),
+        xAcceleration: parseInt(form.xAcceleration.value),
+        yAcceleration: parseInt(form.yAcceleration.value),
+    };
+}
+
+function deleteAll(targets) {
+    targets.length = 0;
+    localStorage['targets'] = JSON.stringify([]);
+}
+
+function showTargetOptions() {
+    document['add'][0].addEventListener('change', function() {
+        const value = this.value.toLowerCase();
+        const option = getAll('.target-option');
+        const button = document.getElementById('add');
+
+        if (value === '---') {
+            option.forEach((el) => {
+                el.style.display = 'none';
+            });
+            button.setAttribute('disabled', 'disabled');
+        } else {
+            option.forEach((el) => {
+                el.style.display = 'block';
+            });
+            button.removeAttribute('disabled');
+            if (value !== 'linear') {
+                getAll('.linear').forEach((el) => {
+                    el.style.display = 'none';
+                });
+            }
+        }
+    });
+}
 
 function modal() {
     const root = document.documentElement;
@@ -26,7 +67,8 @@ function modal() {
 
     if (modalCloses.length > 0) {
         modalCloses.forEach((el) => {
-            el.addEventListener('click', () => {
+            el.addEventListener('click', (e) => {
+                e.preventDefault();
                 closeModals(root, modals);
             });
         });
@@ -50,7 +92,7 @@ function openModal(target, root) {
     root.classList.add('is-clipped');
     modal.classList.add('is-active');
 
-    const firstFormElement = document.querySelector('.first').firstElementChild;
+    const firstFormElement = document.forms[0][0];
     if (firstFormElement) {
         firstFormElement.focus();
     }

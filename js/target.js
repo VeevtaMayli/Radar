@@ -1,5 +1,5 @@
 import {drawTarget} from './drawing.js';
-import {makeAnglePositive} from './util.js';
+import {makeAnglePositive} from './utils.js';
 
 const TARGET_COLOR = 'rgba(200,204,000,1)'; // color only 'rgba(###,###,###,#);'
 const TARGET_SIZE = 5;

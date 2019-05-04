@@ -11,3 +11,8 @@
     left: 0;
     margin: auto;
 }
+
+.target-option
+{
+    display: none;
+}

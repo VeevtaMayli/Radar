@@ -3,6 +3,7 @@ import {Interface as ui} from './interface.js';
 import {initialize} from './initialize.js';
 import {redraw} from './drawing.js';
 import {update} from './updating.js';
+import {Target} from './target.js';
 
 (function main() {
     const canvasEl = document.getElementById('canvas');
@@ -25,6 +26,14 @@ import {update} from './updating.js';
 
     document.addEventListener('DOMContentLoaded', () => {
         ui.initialize();
+        document.getElementById('add').addEventListener('click', () => {
+            const targetParameters = ui.getNewTarget();
+            targets.push(new Target(targetParameters));
+            //console.log(typeof(JSON.parse(localStorage['targets'])));
+            const localTargets = JSON.parse(localStorage['targets']);
+            localTargets.push(targetParameters);
+            localStorage['targets'] = JSON.stringify(localTargets);
+        });
         document.getElementById('delete_all').addEventListener('click', () => {
             ui.deleteAllTargets(targets);
         });

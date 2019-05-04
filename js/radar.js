@@ -1,8 +1,8 @@
-import {angleInsideSector, getNorm} from './util.js';
+import {angleInsideSector, getNorm} from './utils.js';
 import {Target} from './target.js';
 import {LIGHT_VELOCITY} from './indicator.js';
 
-function scan({dt, indicator, targets, detectedTargets, time}) {
+function scan({dt, indicator, targets, detectedTargets}) {
     const signal = indicator.signal;
     const filter = indicator.filter;
     const prevAngle = indicator.scanLine.angle;
@@ -25,7 +25,6 @@ function scan({dt, indicator, targets, detectedTargets, time}) {
         angle: curAngle,
         echoes,
         detectedTargets,
-        time,
     });
 }
 
@@ -118,7 +117,7 @@ function receive({signal, filter, responses, echoes}) {
     });
 }
 
-function process({angle, echoes, detectedTargets, time}) {
+function process({angle, echoes, detectedTargets}) {
     echoes.forEach((echo) => {
         detectedTargets.push(new Target({
             radius: echo * LIGHT_VELOCITY / 2,

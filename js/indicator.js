@@ -1,5 +1,5 @@
 import {drawIndicator} from './drawing.js';
-import {getNorm} from './util.js';
+import {getNorm} from './utils.js';
 
 const INDICATOR_BACKGROUND = '#000000';
 const GRID_COLOR = '#11681d ';
