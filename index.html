@@ -1,89 +1,174 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Radar</title>
-  <link rel="stylesheet" href="css/bulma.min.css">
-  <link rel="stylesheet" href="css/style.css">
+    <title>Radar</title>
+    <link href="./css/bulma.min.css" rel="stylesheet">
+    <link href="./css/style.css" rel="stylesheet">
 </head>
 <body>
-  <a class="button is-primary" id="upload">Add from file</a>
-  <a class="button is-primary modal-button" data-target="add_modal">Add</a>
-  <a class="button is-danger" id="delete">Delete all</a>
-  <a class="button is-link" id="save" download="targets.txt">Save</a>
-  <div class="canvas-wrapper">
-      <canvas id="canvas" class="canvas" width="700" height="700"></canvas>
-  </div>
-  <div class="modal" id="add_modal">
+<section class="section has-text-centered">
+    <div class="columns is-mobile is-centered">
+        <div class="column is-full-mobile is-half-desktop">
+            <div class="field">
+                <div class="field-body">
+                    <div class="field">
+                        <div class="file is-link">
+                            <label class="file-label">
+                                <input class="file-input" name="upload" type="file" id="file">
+                                <span class="file-cta">
+          <span class="file-icon">
+            <i class="fas fa-upload"></i>
+          </span>
+          <span class="file-label">Choose a file...</span>
+        </span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <a class="button is-primary" id="add_from_file">
+            <span class="icon is-small">
+                <i class="fas fa-folder-plus"></i>
+            </span>
+                            <span>Add from file</span>
+                        </a>
+                    </div>
+                    <div class="field">
+                        <a class="button is-primary modal-button" data-target="add_modal">
+    <span class="icon is-small">
+      <i class="fas fa-plus"></i>
+    </span>
+                            <span>Add</span>
+                        </a>
+                    </div>
+                    <div class="field">
+                        <a class="button is-link" download="targets.txt" id="save">
+    <span class="icon is-small">
+      <i class="fas fa-download"></i>
+    </span>
+                            <span>Save</span>
+                        </a>
+                    </div>
+                    <div class="field">
+                        <a class="button is-danger" id="delete">
+    <span class="icon is-small">
+      <i class="fas fa-trash-alt"></i>
+    </span>
+                            <span>Delete all</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="canvas-wrapper">
+        <canvas class="canvas" height="700" id="canvas" width="700"></canvas>
+    </div>
+</section>
+<div class="modal" id="add_modal">
     <div class="modal-background"></div>
     <div class="modal-content">
-      <form class="box" name="add">
-        <h1 class="title">Adding a new target</h1>
-        <label class="label">Type of moving</label>
-        <div class="field is-grouped">
-          <div class="control">
-            <div class="select is-primary">
-              <select title="Select type of a target" name="type">
-                <option selected>---</option>
-                <option>Random</option>
-                <option>Linear</option>
-              </select>
+        <form class="box" name="add">
+            <h1 class="title">Adding a new target</h1>
+            <div class="field">
+                <div class="field-label">
+                    <label class="label">Type of moving</label>
+                </div>
+                <div class="field-body">
+                    <div class="control">
+                        <div class="select is-primary">
+                            <select name="type" title="Select type of a target">
+                                <option selected>---</option>
+                                <option>Random</option>
+                                <option>Linear</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-        <div class="field target-option">
-          <label class="label">Distance</label>
-          <div class="field is-grouped">
-            <div class="control">
-              <input class="input is-primary" type="text" placeholder="Distance in meters" title="Distance in meters" value="25000" name="radius">
+            <div class="field target-option" style="display: none;">
+                <div class="field-label">
+                    <label class="label">Distance</label>
+                </div>
+                <div class="field-body">
+                    <div class="control">
+                        <input class="input is-primary" name="radius" placeholder="Distance in meters"
+                               title="Distance in meters" type="text" value="25000">
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-        <div class="field target-option">
-          <label class="label">Angle</label>
-          <div class="field is-grouped">
-            <div class="control">
-              <input class="input is-primary" type="text" placeholder="Angle in degrees" title="Angle in degrees" value="0" name="angle">
+            <div class="field target-option" style="display: none;">
+                <div class="field-label">
+                    <label class="label">Angle</label>
+                </div>
+                <div class="field-body">
+                    <div class="control">
+                        <input class="input is-primary" name="angle" placeholder="Angle in degrees"
+                               title="Angle in degrees" type="text" value="0">
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-        <div class="field linear target-option">
-          <label class="label">Speed</label>
-          <div class="field is-grouped">
-            <div class="control">
-              <input class="input is-primary" type="text" placeholder="X-axis speed in meters per second" title="X-axis speed in meters per second" value="150" name="xSpeed">
+            <div class="field is-horizontal target-option linear" style="display: none;">
+                <div class="field-label">
+                    <label class="label">Speed</label>
+                </div>
+                <div class="field-body">
+                    <div class="field">
+                        <div class="control">
+                            <input class="input is-primary" name="xSpeed"
+                                   placeholder="X-axis speed in meters per second"
+                                   title="X-axis speed in meters per second" type="text" value="150">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="control">
+                            <input class="input is-primary" name="ySpeed"
+                                   placeholder="Y-axis speed in meters per second"
+                                   title="Y-axis speed in meters per second" type="text" value="50">
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="control">
-              <input class="input is-primary" type="text" placeholder="Y-axis speed in meters per second" title="Y-axis speed in meters per second" value="50" name="ySpeed">
+            <div class="field is-horizontal target-option linear" style="display: none;">
+                <div class="field-label">
+                    <label class="label">Acceleration</label>
+                </div>
+                <div class="field-body">
+                    <div class="field">
+                        <div class="control">
+                            <input class="input is-primary" name="xAcceleration"
+                                   placeholder="X-axis acceleration in meters per second squared"
+                                   title="X-axis acceleration in meters per second squared" type="text"
+                                   value="10">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="control">
+                            <input class="input is-primary" name="yAcceleration"
+                                   placeholder="Y-axis acceleration in meters per second squared"
+                                   title="Y-axis acceleration in meters per second squared" type="text"
+                                   value="20">
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-        <div class="field linear target-option">
-          <label class="label">Acceleration</label>
-          <div class="field is-grouped">
-            <div class="control">
-              <input class="input is-primary" type="text" placeholder="X-axis acceleration in meters per second squared" title="X-axis acceleration in meters per second squared"value="10" name="xAcceleration">
+            <div class="field is-grouped">
+                <p class="control">
+                    <button class="button is-primary" disabled id="add" title="Add a new target">
+                        Add
+                    </button>
+                </p>
+                <p class="control">
+                    <button class="button is-danger" title="Cancel">
+                        Cancel
+                    </button>
+                </p>
             </div>
-            <div class="control">
-              <input class="input is-primary" type="text" placeholder="Y-axis acceleration in meters per second squared" title="Y-axis acceleration in meters per second squared"value="20" name="yAcceleration">
-            </div>
-          </div>
-        </div>
-        <div class="field is-grouped">
-          <p class="control">
-            <button class="button is-primary" id="add" title="Add a new target" disabled>
-              Add
-            </button>
-          </p>
-          <p class="control">
-            <button class="button is-danger" title="Cancel">
-              Cancel
-            </button>
-          </p>
-        </div>
-      </>
+        </form>
     </div>
-    <button class="modal-close is-large" aria-label="close"></button>
-  </div>
-  <script src="./js/main.js" type="module"></script>
+    <button aria-label="close" class="modal-close is-large"></button>
+</div>
+<script defer src="./js/solid.min.js"></script>
+<script defer src="./js/fontawesome.min.js"></script>
+<script defer src="./js/main.js" type="module"></script>
 </body>
 </html>

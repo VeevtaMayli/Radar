@@ -26,8 +26,14 @@ import {Target} from './target.js';
 
     document.addEventListener('DOMContentLoaded', () => {
         ui.initialize();
+        document.getElementById('add_from_file').addEventListener('click', () => {
+            ui.getNewTargetsFromFile();
+            JSON.parse(localStorage['targets']).forEach((target) => {
+                targets.push(new Target(target));
+            });
+        });
         document.getElementById('add').addEventListener('click', () => {
-            const targetParameters = ui.getNewTarget();
+            const targetParameters = ui.getNewTargetFromForm();
             targets.push(new Target(targetParameters));
             const localTargets = JSON.parse(localStorage['targets']);
             localTargets.push(targetParameters);
@@ -38,7 +44,6 @@ import {Target} from './target.js';
         });
         document.getElementById('save').addEventListener('click', function() {
             this.href = ui.generateTargetsFile();
-            console.log(this.href);
         });
     });
 

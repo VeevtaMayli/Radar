@@ -1,6 +1,7 @@
 const Interface = {
     deleteAllTargets: deleteAll,
-    getNewTarget: get,
+    getNewTargetFromForm: getFromForm,
+    getNewTargetsFromFile: getFromFile,
     generateTargetsFile: generateFile,
     initialize: () => {
         modal();
@@ -8,7 +9,18 @@ const Interface = {
     },
 };
 
-function get() {
+function getFromFile() {
+    const file = document.getElementById('file').files[0];
+    const reader = new FileReader();
+
+    reader.addEventListener('load', () => {
+        localStorage['targets'] = reader.result;
+    });
+
+    reader.readAsText(file);
+}
+
+function getFromForm() {
     const form = document['add'];
     return {
         type: form.type.value.toLowerCase(),
