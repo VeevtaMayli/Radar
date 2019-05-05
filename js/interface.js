@@ -1,15 +1,36 @@
-const Interface = {
-    deleteAllTargets: deleteAll,
-    getNewTargetFromForm: getFromForm,
-    getNewTargetsFromFile: getFromFile,
-    generateTargetsFile: generateFile,
-    initialize: () => {
-        modal();
-        showTargetOptions();
-    },
-};
+import {Target} from './target.js';
+import {dateInYYYYMMDDhhmmss} from './utils.js';
 
-function getFromFile() {
+function interfaceInitialize(targets) {
+    modal();
+    showTargetOptions();
+    addEventListeners(targets);
+}
+
+function addEventListeners(targets) {
+    document.getElementById('add_from_file').addEventListener('click', () => {
+        getNewTargetsFromFile();
+        JSON.parse(localStorage['targets']).forEach((target) => {
+            targets.push(new Target(target));
+        });
+    });
+    document.getElementById('add').addEventListener('click', () => {
+        const targetParameters = getNewTargetFromForm();
+        targets.push(new Target(targetParameters));
+        const localTargets = JSON.parse(localStorage['targets']);
+        localTargets.push(targetParameters);
+        localStorage['targets'] = JSON.stringify(localTargets);
+    });
+    document.getElementById('delete').addEventListener('click', () => {
+        deleteAllTargets(targets);
+    });
+    document.getElementById('save').addEventListener('click', function() {
+        document.getElementById('save').setAttribute('download', 'target_' + dateInYYYYMMDDhhmmss());
+        this.href = generateTargetsFile();
+    });
+}
+
+function getNewTargetsFromFile() {
     const file = document.getElementById('file').files[0];
     const reader = new FileReader();
 
@@ -20,7 +41,7 @@ function getFromFile() {
     reader.readAsText(file);
 }
 
-function getFromForm() {
+function getNewTargetFromForm() {
     const form = document['add'];
     return {
         type: form.type.value.toLowerCase(),
@@ -33,12 +54,12 @@ function getFromForm() {
     };
 }
 
-function deleteAll(targets) {
+function deleteAllTargets(targets) {
     targets.length = 0;
     localStorage['targets'] = JSON.stringify([]);
 }
 
-function generateFile() {
+function generateTargetsFile() {
     const targets = localStorage['targets'];
     const file = new Blob([targets], {type: 'text/plain'});
     return URL.createObjectURL(file);
@@ -97,7 +118,6 @@ function modal() {
         const e = event || window.event;
         if (e.keyCode === 27) {
             closeModals(root, modals);
-            //closeDropdowns();
         }
     });
 }
@@ -124,4 +144,4 @@ function closeModals(root, modals) {
     });
 }
 
-export {Interface};
+export {interfaceInitialize};

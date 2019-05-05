@@ -1,9 +1,8 @@
 import {Indicator} from './indicator.js';
-import {Interface as ui} from './interface.js';
+import {interfaceInitialize} from './interface.js';
 import {initialize} from './initialize.js';
 import {redraw} from './drawing.js';
 import {update} from './updating.js';
-import {Target} from './target.js';
 
 (function main() {
     const canvasEl = document.getElementById('canvas');
@@ -25,26 +24,7 @@ import {Target} from './target.js';
     const detectedTargets = [];
 
     document.addEventListener('DOMContentLoaded', () => {
-        ui.initialize();
-        document.getElementById('add_from_file').addEventListener('click', () => {
-            ui.getNewTargetsFromFile();
-            JSON.parse(localStorage['targets']).forEach((target) => {
-                targets.push(new Target(target));
-            });
-        });
-        document.getElementById('add').addEventListener('click', () => {
-            const targetParameters = ui.getNewTargetFromForm();
-            targets.push(new Target(targetParameters));
-            const localTargets = JSON.parse(localStorage['targets']);
-            localTargets.push(targetParameters);
-            localStorage['targets'] = JSON.stringify(localTargets);
-        });
-        document.getElementById('delete').addEventListener('click', () => {
-            ui.deleteAllTargets(targets);
-        });
-        document.getElementById('save').addEventListener('click', function() {
-            this.href = ui.generateTargetsFile();
-        });
+        interfaceInitialize(targets);
     });
 
     initialize({indicator, targets});
