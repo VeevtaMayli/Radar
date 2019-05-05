@@ -1,0 +1,28 @@
+{
+  "name": "indicator",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "dependencies": {
+    "webpack": "^4.30.0"
+  },
+  "devDependencies": {
+    "eslint": "^5.16.0",
+    "eslint-config-google": "^0.12.0",
+    "webpack-cli": "^3.3.2"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VeevtaMayli/Radar.git"
+  },
+  "keywords": [],
+  "author": "Ilya Matveev",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/VeevtaMayli/Radar/issues"
+  },
+  "homepage": "https://VeevtaMayli.github.io/Radar"
+}
