@@ -66,7 +66,6 @@ function Target({radius, angle, xSpeed = 0, ySpeed = 0, xAcceleration = 0, yAcce
     };
     this.attenuate = ({dt, indicator}) => {
         this.lifetime -= dt / indicator.scanLine.period / TARGET_LIFETIME_IN_PERIODS;
-
         const rgb = this.color.slice(0, 17);
         this.color = rgb + this.lifetime + ')';
     };

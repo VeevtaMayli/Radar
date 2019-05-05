@@ -14,7 +14,6 @@ function update({dt, time, indicator, targets, detectedTargets}) {
         const targetPosition = target.motionLaw(time);
         target.radius = targetPosition.radius;
         target.angle = targetPosition.angle;
-        //console.log(targetPosition);
     });
 }
 
