@@ -118,6 +118,8 @@ function receive({signal, filter, responses, echoes}) {
 }
 
 function process({angle, echoes, detectedTargets}) {
+    if (echoes.length === 0) return;
+
     echoes.forEach((echo) => {
         detectedTargets.push(new Target({
             radius: echo * LIGHT_VELOCITY / 2,
